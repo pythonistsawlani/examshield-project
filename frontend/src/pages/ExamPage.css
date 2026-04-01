@@ -1,0 +1,228 @@
+/* Exam Page — Neon Cyber Specific Styles */
+
+.exam-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ── Top Bar ── */
+.exam-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.exam-title { flex: 1; }
+
+/* ── Timer ── */
+.exam-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 32px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.timer-display {
+  font-family: var(--font-mono);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  text-shadow: var(--glow-green);
+  line-height: 1;
+}
+
+.timer-critical .timer-display {
+  color: var(--danger);
+  text-shadow: var(--glow-red);
+  animation: blink 0.8s step-end infinite;
+}
+
+.exam-info { flex: 1; display: flex; justify-content: flex-end; }
+
+/* ── Exam Body ── */
+.exam-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Left Navigator ── */
+.q-navigator {
+  width: 200px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.q-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+/* Question pill */
+.q-pill {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--text-dim);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.q-pill:hover       { border-color: var(--primary); color: var(--primary); }
+.q-pill--answered   { background: rgba(0,255,65,0.1); border-color: var(--primary); color: var(--primary); }
+.q-pill--current    { background: var(--primary); color: #000; box-shadow: var(--glow-green); border-color: var(--primary); }
+.q-pill--flagged    { background: rgba(255,0,0,0.1); border-color: var(--danger); color: var(--danger); }
+.q-pill--unanswered { border-color: var(--text-dim); color: var(--text-dim); }
+
+.q-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Main Question Area ── */
+.q-main {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.q-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.q-text-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 24px;
+}
+
+/* ── MCQ Options ── */
+.q-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.q-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.q-option:hover {
+  border-color: rgba(255, 0, 110, 0.4);
+  background: rgba(255, 0, 110, 0.03);
+}
+
+.q-option--selected {
+  border-color: var(--secondary);
+  background: rgba(255, 0, 110, 0.08);
+  box-shadow: var(--glow-pink);
+}
+
+.q-option-label {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.q-option--selected .q-option-label {
+  background: var(--secondary);
+  color: #fff;
+  border-color: var(--secondary);
+  box-shadow: var(--glow-pink);
+}
+
+.q-option-text {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.q-option-check {
+  color: var(--secondary);
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: var(--glow-pink);
+}
+
+/* ── Navigation Buttons ── */
+.q-nav-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Cheat Warning Popup ── */
+.cheat-popup {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  background: var(--bg-card);
+  border: 2px solid var(--danger);
+  box-shadow: var(--glow-red), 0 20px 40px rgba(0,0,0,0.5);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 480px;
+  animation: glitch 0.3s ease;
+}
+
+.cheat-popup > span { font-size: 28px; }
+.cheat-popup strong { display: block; color: var(--danger); font-family: var(--font-heading); font-size: 14px; letter-spacing: 0.1em; }
+.cheat-popup p { color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; margin-top: 4px; }
