@@ -109,9 +109,12 @@ export default function StudentDashboard() {
             </div>
 
             {loading ? (
-              <div style={{padding:'20px', textAlign:'center'}}>
+              <div style={{padding:'40px 20px', textAlign:'center'}}>
                 <span className="blink text-green" style={{fontSize:'24px'}}>⏳</span>
-                <p className="text-muted mono blink mt-2" style={{fontSize:'12px'}}>FETCHING SECURE DATA...</p>
+                <p className="text-green mono blink mt-2" style={{fontSize:'12px', fontWeight:'600'}}>FETCHING SECURE DATA...</p>
+                <p className="text-muted mono mt-1" style={{fontSize:'10px', opacity:0.8}}>
+                  PLEASE WAIT — BACKEND MAY BE WAKING UP (RENDER COLD START)
+                </p>
               </div>
             ) : errorStatus ? (
               <p className="text-red mono" style={{fontSize:'12px', color: 'var(--danger)'}}>// SYSTEM ERROR: UNABLE TO FETCH DATA</p>

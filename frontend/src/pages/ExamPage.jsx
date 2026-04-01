@@ -169,8 +169,11 @@ export default function ExamPage() {
           <p className="glow-green mono blink" style={{fontSize:'18px', letterSpacing:'0.15em'}}>
             INITIALIZING_EXAM_SESSION...
           </p>
-          <p className="text-muted mono" style={{fontSize:'11px', marginTop:'12px'}}>
+          <p className="text-muted mono mt-2" style={{fontSize:'12px'}}>
             Loading questions & configuring anti-cheat
+          </p>
+          <p className="text-muted mono mt-3" style={{fontSize:'10px', opacity:0.7, borderTop:'1px solid var(--border)', paddingTop:'12px'}}>
+            PLEASE WAIT — BACKEND MAY BE WAKING UP (RENDER COLD START)
           </p>
         </div>
       </div>

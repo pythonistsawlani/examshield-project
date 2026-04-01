@@ -238,7 +238,12 @@ export default function Login() {
             )}
 
             <button type="submit" className="btn btn-primary w-full" disabled={loading} style={{marginTop: '1rem'}}>
-              {loading ? <span className="blink">PROCESSING...</span> : (
+              {loading ? (
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px'}}>
+                  <span className="blink">PROCESSING...</span>
+                  <span className="mono" style={{fontSize:'9px', opacity:0.7}}>BACKEND MAY BE WAKING UP (COLD START)</span>
+                </div>
+              ) : (
                 mode === 'login' ? `ACCESS AS ${role.toUpperCase()}` : 
                 mode === 'signup' ? 'CREATE ACCOUNT' : 
                 mode === 'forgot' ? 'SEND RESET LINK' : 'UPDATE PASSWORD'
