@@ -33,7 +33,12 @@ export default function StudentDashboard() {
       } catch (err) {
         console.error(err);
         setErrorStatus(true);
-        toast.error('Failed to load exams. Connection to server lost.', { duration: 5000 });
+        if (!toast.isActive('dashboard-load-error')) {
+          toast.error('Failed to load exams. Connection to server lost.', {
+            toastId: 'dashboard-load-error',
+            duration: 5000,
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -124,7 +129,15 @@ export default function StudentDashboard() {
               <div style={{display:'flex', flexDirection:'column', gap:'12px'}}>
                 {exams.map(exam => {
                   const attempts = attemptCounts[exam.id] || 0;
-                  const isCompleted = attempts > 0;
+                  const maxAttempts = Number(exam.max_attempts) > 0 ? Number(exam.max_attempts) : 3;
+                  const canTake = attempts < maxAttempts;
+                  const label = !exam.question_count
+                    ? 'NO Q_BANK'
+                    : !canTake
+                      ? 'MAX ATTEMPTS'
+                      : attempts === 0
+                        ? 'START ▶'
+                        : 'RETAKE ▶';
                   return (
                     <div key={exam.id} className="exam-card-row card card--elevated">
                       <div>
@@ -134,18 +147,20 @@ export default function StudentDashboard() {
                         </p>
                         <div style={{marginTop:'8px', display:'flex', gap:'6px', flexWrap:'wrap'}}>
                           <span className="badge badge-green">{exam.subject || 'GENERAL'}</span>
-                          {exam.is_active && !isCompleted && <span className="badge badge-pink">LIVE</span>}
-                          {isCompleted && <span className="badge badge-secondary">ATTEMPTS: {attempts}</span>}
+                          {exam.is_active && canTake && <span className="badge badge-pink">LIVE</span>}
+                          <span className="badge badge-secondary">
+                            ATTEMPTS: {attempts}/{maxAttempts}
+                          </span>
                           {!exam.question_count && <span className="badge badge-red">EMPTY</span>}
                         </div>
                       </div>
                       <button
-                        className={`btn ${exam.question_count > 0 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`btn ${exam.question_count > 0 && canTake ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => navigate(`/exam/${exam.id}`)}
-                        disabled={!exam.question_count}
+                        disabled={!exam.question_count || !canTake}
                         style={{marginTop:'12px', padding:'8px 16px', fontSize:'11px'}}
                       >
-                        {isCompleted ? 'RETAKE ▶' : (exam.question_count > 0 ? 'START ▶' : 'NO Q_BANK')}
+                        {label}
                       </button>
                     </div>
                   );

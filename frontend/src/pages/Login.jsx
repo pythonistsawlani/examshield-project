@@ -12,10 +12,12 @@ export default function Login() {
   const { login } = useAuth();
 
   const [role, setRole]       = useState('student');
-  const [mode, setMode]       = useState('login'); // login | signup | forgot | reset
+  const [mode, setMode]       = useState('login'); // login | signup | reset
   
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '', token: '' });
   const [loading, setLoading] = useState(false);
+  const [forgotModal, setForgotModal] = useState(false);
+  const [forgotForm, setForgotForm] = useState({ email: '', password: '', confirm: '' });
 
   // Check if URL has reset token (e.g. /reset-password/12345)
   useEffect(() => {
@@ -50,24 +52,13 @@ export default function Login() {
         toast.success('Registration successful! Please login.');
         setMode('login');
       } 
-      else if (mode === 'forgot') {
-        const res = await forgotPasswordAPI(form.email);
-        toast.success(res.message);
-        // For project presentation without SMTP email
-        if (res.mockTokenForPresentation) {
-          toast(`Mock Reset Token Gen: ${res.mockTokenForPresentation.substring(0, 10)}... (Check Terminal)`, {
-            icon: '📧',
-          });
-        }
-        setMode('login');
-      }
       else if (mode === 'reset') {
         if (form.password !== form.confirm) {
           toast.error('Passwords do not match');
           setLoading(false);
           return;
         }
-        const res = await resetPasswordAPI(form.token, form.password);
+        const res = await resetPasswordAPI({ token: form.token, newPassword: form.password });
         toast.success(res.message);
         navigate('/');
         setMode('login');
@@ -80,7 +71,53 @@ export default function Login() {
         navigate(res.user.role === 'admin' ? '/admin' : '/dashboard');
       }
     } catch (err) {
-      toast.error(err.message || 'Operation failed.');
+      if (!toast.isActive('login-error')) {
+        toast.error(err.message || 'Operation failed.', { toastId: 'login-error' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitForgotMock = async (e) => {
+    e.preventDefault();
+    if (forgotForm.password !== forgotForm.confirm) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (forgotForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPasswordAPI({ email: forgotForm.email.trim(), newPassword: forgotForm.password });
+      toast.success('Password updated. You can sign in with your new password.');
+      setForgotModal(false);
+      setForgotForm({ email: '', password: '', confirm: '' });
+    } catch (err) {
+      if (!toast.isActive('forgot-error')) {
+        toast.error(err.message || 'Reset failed.', { toastId: 'forgot-error' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestTokenLink = async () => {
+    if (!forgotForm.email.trim()) {
+      toast.error('Enter your email first.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await forgotPasswordAPI(forgotForm.email.trim());
+      toast.success(res.message);
+      if (res.mockTokenForPresentation) {
+        toast(`Token (dev): ${res.mockTokenForPresentation.slice(0, 12)}… — check server logs for full link.`, { icon: '📧' });
+      }
+    } catch (err) {
+      toast.error(err.message || 'Request failed.');
     } finally {
       setLoading(false);
     }
@@ -119,9 +156,9 @@ export default function Login() {
               SYSTEM ACCESS
             </p>
             <h2 style={{fontFamily:'var(--font-heading)', fontSize:'24px', marginTop:'4px'}}>
-              {mode === 'login' ? 'AUTHENTICATE' : 
-               mode === 'signup' ? 'STUDENT REGISTRATION' : 
-               mode === 'forgot' ? 'RECOVER ACCOUNT' : 'RESET PASSWORD'}
+              {mode === 'login' ? 'AUTHENTICATE' :
+               mode === 'signup' ? 'STUDENT REGISTRATION' :
+               'RESET PASSWORD'}
             </h2>
           </div>
 
@@ -207,7 +244,7 @@ export default function Login() {
               </div>
             )}
 
-            {mode !== 'forgot' && (
+            {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
               <div className="input-wrapper">
                 <label className="input-label">{mode === 'reset' ? 'NEW PASSWORD' : 'PASSWORD'}</label>
                 <input
@@ -244,13 +281,13 @@ export default function Login() {
                   <span className="mono" style={{fontSize:'9px', opacity:0.7}}>BACKEND MAY BE WAKING UP (COLD START)</span>
                 </div>
               ) : (
-                mode === 'login' ? `ACCESS AS ${role.toUpperCase()}` : 
-                mode === 'signup' ? 'CREATE ACCOUNT' : 
-                mode === 'forgot' ? 'SEND RESET LINK' : 'UPDATE PASSWORD'
+                mode === 'login' ? `ACCESS AS ${role.toUpperCase()}` :
+                mode === 'signup' ? 'CREATE ACCOUNT' :
+                'UPDATE PASSWORD'
               )}
             </button>
 
-            {(mode === 'forgot' || mode === 'reset') && (
+            {mode === 'reset' && (
                <p className="forgot-link text-center mt-3">
                  <span className="text-green" style={{cursor:'pointer'}} onClick={() => setMode('login')}>
                    ← Back to Login
@@ -261,9 +298,14 @@ export default function Login() {
             {mode === 'login' && (
               <p className="forgot-link">
                 <span className="text-muted">Forgot password? </span>
-                <span className="text-green" style={{cursor:'pointer'}} onClick={() => setMode('forgot')}>
-                  Reset →
-                </span>
+                <button
+                  type="button"
+                  className="text-green"
+                  style={{cursor:'pointer', background:'none', border:'none', padding:0, font:'inherit'}}
+                  onClick={() => setForgotModal(true)}
+                >
+                  Open reset →
+                </button>
               </p>
             )}
           </form>
@@ -278,6 +320,94 @@ export default function Login() {
           )}
         </div>
       </div>
+
+      {forgotModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => !loading && setForgotModal(false)}
+          role="presentation"
+        >
+          <div
+            className="login-card"
+            style={{ maxWidth: '420px', width: '100%', margin: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="forgot-modal-title"
+          >
+            <p className="mono text-muted" style={{ fontSize: '10px', letterSpacing: '0.15em' }}>
+              PASSWORD RECOVERY (MOCK)
+            </p>
+            <h2 id="forgot-modal-title" style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', marginTop: '8px' }}>
+              Reset by email
+            </h2>
+            <p className="text-muted mono" style={{ fontSize: '11px', marginTop: '8px', lineHeight: 1.5 }}>
+              Sets a new password immediately (no email server). For token-based reset, use &quot;Request token link&quot; and open the URL from server logs.
+            </p>
+            <form onSubmit={submitForgotMock} className="login-form" style={{ marginTop: '20px' }}>
+              <div className="input-wrapper">
+                <label className="input-label">EMAIL</label>
+                <input
+                  className="input-field"
+                  type="email"
+                  required
+                  value={forgotForm.email}
+                  onChange={(e) => setForgotForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div className="input-wrapper">
+                <label className="input-label">NEW PASSWORD</label>
+                <input
+                  className="input-field"
+                  type="password"
+                  required
+                  value={forgotForm.password}
+                  onChange={(e) => setForgotForm((f) => ({ ...f, password: e.target.value }))}
+                />
+              </div>
+              <div className="input-wrapper">
+                <label className="input-label">CONFIRM</label>
+                <input
+                  className="input-field"
+                  type="password"
+                  required
+                  value={forgotForm.confirm}
+                  onChange={(e) => setForgotForm((f) => ({ ...f, confirm: e.target.value }))}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary w-full" disabled={loading} style={{ marginTop: '12px' }}>
+                {loading ? '…' : 'UPDATE PASSWORD'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary w-full"
+                style={{ marginTop: '8px', fontSize: '11px' }}
+                onClick={requestTokenLink}
+                disabled={loading}
+              >
+                Request token link (forgot-password flow)
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary w-full"
+                style={{ marginTop: '8px' }}
+                onClick={() => !loading && setForgotModal(false)}
+              >
+                Cancel
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

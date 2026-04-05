@@ -24,7 +24,9 @@ export default function AdminDashboard() {
   const [stats,   setStats]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [modal,   setModal]   = useState({ open: false, mode: 'create', exam: null });
-  const [form,    setForm]    = useState({ title:'', subject:'', duration:'', total_marks:'', description:'' });
+  const [form,    setForm]    = useState({
+    title:'', subject:'', duration:'', total_marks:'', description:'', max_attempts: '3',
+  });
   const [saving,  setSaving]  = useState(false);
   const [search,  setSearch]  = useState('');
 
@@ -55,13 +57,22 @@ export default function AdminDashboard() {
 
   // Open create modal
   const openCreate = () => {
-    setForm({ title:'', subject:'', duration:'', total_marks:'', description:'' });
+    setForm({
+      title:'', subject:'', duration:'', total_marks:'', description:'', max_attempts: '3',
+    });
     setModal({ open: true, mode: 'create', exam: null });
   };
 
   // Open edit modal
   const openEdit = (exam) => {
-    setForm({ title: exam.title, subject: exam.subject || '', duration: exam.duration, total_marks: exam.total_marks, description: exam.description || '' });
+    setForm({
+      title: exam.title,
+      subject: exam.subject || '',
+      duration: exam.duration,
+      total_marks: exam.total_marks,
+      description: exam.description || '',
+      max_attempts: String(exam.max_attempts != null ? exam.max_attempts : 3),
+    });
     setModal({ open: true, mode: 'edit', exam });
   };
 
@@ -69,10 +80,16 @@ export default function AdminDashboard() {
   const saveExam = async () => {
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        duration: Number(form.duration),
+        total_marks: Number(form.total_marks),
+        max_attempts: Math.max(1, Number(form.max_attempts) || 1),
+      };
       if (modal.mode === 'create') {
-        await createExamAPI(token, form);
+        await createExamAPI(token, payload);
       } else {
-        await updateExamAPI(token, modal.exam.id, form);
+        await updateExamAPI(token, modal.exam.id, payload);
       }
       setModal({ open: false, mode: 'create', exam: null });
       fetchData();
@@ -177,7 +194,12 @@ export default function AdminDashboard() {
                     <td style={{fontFamily:'var(--font-body)', fontWeight:'500'}}>{exam.title}</td>
                     <td className="mono text-muted" style={{fontSize:'12px'}}>{exam.subject || 'GENERAL'}</td>
                     <td className="mono" style={{fontSize:'12px'}}>{exam.duration} MIN</td>
-                    <td className="mono text-green" style={{fontSize:'12px'}}>{exam.question_count || 0}</td>
+                    <td className="mono text-green" style={{fontSize:'12px'}}>
+                      {exam.question_count || 0}
+                      <span className="text-muted" style={{ display: 'block', fontSize: '10px' }}>
+                        max {exam.max_attempts != null ? exam.max_attempts : 3} tries
+                      </span>
+                    </td>
                     <td>
                       <span className={`badge ${exam.is_active ? 'badge-green' : 'badge-gray'}`}>
                         {exam.is_active ? 'ACTIVE' : 'DRAFT'}
@@ -234,6 +256,7 @@ export default function AdminDashboard() {
                 {key:'subject',     label:'SUBJECT',       type:'text',   ph:'e.g. Computer Science'},
                 {key:'duration',    label:'DURATION (MIN)',type:'number', ph:'e.g. 60'},
                 {key:'total_marks', label:'TOTAL_MARKS',   type:'number', ph:'e.g. 100'},
+                {key:'max_attempts',label:'MAX_ATTEMPTS',  type:'number', ph:'e.g. 3'},
                 {key:'description', label:'DESCRIPTION',   type:'text',   ph:'Brief description...'},
               ].map(f => (
                 <div key={f.key} className="input-wrapper">

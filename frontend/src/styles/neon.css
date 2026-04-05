@@ -31,6 +31,23 @@
   --transition:   all 0.2s ease;
 }
 
+/* Reduced neon (Display preferences — localStorage: examshield_neonGlow = false) */
+html.neon-glow-off {
+  --glow-green: none;
+  --glow-pink: none;
+  --glow-red: none;
+}
+
+html.neon-glow-off .glow-green,
+html.neon-glow-off .glow-pink {
+  text-shadow: none;
+}
+
+html.neon-glow-off .card--glow,
+html.neon-glow-off .card--pink-glow {
+  box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.04);
+}
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -1,5 +1,5 @@
-// API base URL — change to your backend URL
-const BASE_URL = 'https://examshield-api.onrender.com/api';
+// API base URL — override with REACT_APP_API_URL (e.g. http://localhost:5000/api locally)
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://examshield-api.onrender.com/api';
 
 // Helper: attach JWT token to all requests
 const authHeaders = (token) => ({
@@ -57,11 +57,12 @@ export const forgotPasswordAPI = (email) =>
     body: JSON.stringify({ email }),
   });
 
-export const resetPasswordAPI = (token, newPassword) =>
+/** Body: { token, newPassword } or mock { email, newPassword } */
+export const resetPasswordAPI = (body) =>
   safeFetch(`${BASE_URL}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, newPassword }),
+    body: JSON.stringify(body),
   });
 
 /* ── Exam APIs ── */
@@ -150,3 +151,17 @@ export const getAdminStudentsAPI = (token) =>
 
 export const getAdminAllResultsAPI = (token) =>
   safeFetch(`${BASE_URL}/admin/all-results`, { headers: authHeaders(token) });
+
+export const adminCreateAdminAPI = (token, { name, email, password }) =>
+  safeFetch(`${BASE_URL}/admin/create`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ name, email, password }),
+  });
+
+export const adminChangePasswordAPI = (token, { oldPassword, newPassword }) =>
+  safeFetch(`${BASE_URL}/admin/change-password`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });

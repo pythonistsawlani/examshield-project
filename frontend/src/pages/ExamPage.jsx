@@ -48,7 +48,11 @@ export default function ExamPage() {
 
         const qData = await getQuestionsAPI(token, examId);
         if (!qData || qData.length === 0) {
-          toast.error("SYSTEM ERROR: Developer hasn't added questions to this exam yet.");
+          if (!toast.isActive('exam-no-questions')) {
+            toast.error("SYSTEM ERROR: Developer hasn't added questions to this exam yet.", {
+              toastId: 'exam-no-questions',
+            });
+          }
           return navigate('/dashboard');
         }
         // Randomize question order
@@ -56,7 +60,10 @@ export default function ExamPage() {
         setQuestions(shuffled);
       } catch (err) {
         console.error(err);
-        toast.error(err.message || 'Failed to initialize exam.');
+        const msg = err.message || 'Failed to initialize exam.';
+        if (!toast.isActive('exam-flow-error')) {
+          toast.error(msg, { toastId: 'exam-flow-error', duration: 5000 });
+        }
         navigate('/dashboard'); // Prevent loading exam without attemptId
       } finally {
         setLoading(false);
@@ -142,7 +149,9 @@ export default function ExamPage() {
       navigate(`/result/${result.resultId}`);
     } catch (err) {
       console.error(err);
-      toast.error(err.message || 'Failed to submit exam.');
+      if (!toast.isActive('exam-submit-error')) {
+        toast.error(err.message || 'Failed to submit exam.', { toastId: 'exam-submit-error' });
+      }
       setSubmitting(false); // Fix: stop the spinner on error
     }
   }, [token, attemptId, answers, navigate]);
