@@ -23,13 +23,15 @@ router.get('/', protect, async (req, res) => {
 /* POST /api/exams — Create exam (Admin only) */
 router.post('/', protect, isAdmin, async (req, res) => {
   try {
-    const { title, subject, duration, total_marks, description } = req.body;
+    const { title, subject, duration, total_marks, description, max_attempts } = req.body;
     if (!title || !duration || !total_marks) {
       return res.status(400).json({ message: 'Title, duration and total_marks required.' });
     }
+    const maxAttempts = max_attempts != null ? Math.max(1, Number(max_attempts)) : 3;
     const [result] = await db.query(
-      'INSERT INTO exams (title, subject, duration, total_marks, description, created_by) VALUES (?,?,?,?,?,?)',
-      [title, subject || null, duration, total_marks, description || null, req.user.id]
+      `INSERT INTO exams (title, subject, duration, total_marks, description, max_attempts, created_by)
+       VALUES (?,?,?,?,?,?,?)`,
+      [title, subject || null, duration, total_marks, description || null, maxAttempts, req.user.id]
     );
     res.status(201).json({ message: 'Exam created.', examId: result.insertId });
   } catch (err) {
@@ -40,11 +42,19 @@ router.post('/', protect, isAdmin, async (req, res) => {
 /* PUT /api/exams/:id — Update exam (Admin only) */
 router.put('/:id', protect, isAdmin, async (req, res) => {
   try {
-    const { title, subject, duration, total_marks, description, is_active } = req.body;
-    await db.query(
-      'UPDATE exams SET title=?, subject=?, duration=?, total_marks=?, description=?, is_active=? WHERE id=?',
-      [title, subject, duration, total_marks, description, is_active ?? 1, req.params.id]
-    );
+    const { title, subject, duration, total_marks, description, is_active, max_attempts } = req.body;
+    const maxAttempts = max_attempts != null ? Math.max(1, Number(max_attempts)) : undefined;
+    if (maxAttempts !== undefined) {
+      await db.query(
+        `UPDATE exams SET title=?, subject=?, duration=?, total_marks=?, description=?, is_active=?, max_attempts=? WHERE id=?`,
+        [title, subject, duration, total_marks, description, is_active ?? 1, maxAttempts, req.params.id]
+      );
+    } else {
+      await db.query(
+        'UPDATE exams SET title=?, subject=?, duration=?, total_marks=?, description=?, is_active=? WHERE id=?',
+        [title, subject, duration, total_marks, description, is_active ?? 1, req.params.id]
+      );
+    }
     res.json({ message: 'Exam updated.' });
   } catch (err) {
     res.status(500).json({ message: err.message });

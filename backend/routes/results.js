@@ -55,7 +55,7 @@ router.post('/submit', protect, async (req, res) => {
 
     // Calculate rank for this exam
     const [[rankRow]] = await db.query(
-      `SELECT COUNT(*) + 1 AS rank FROM results WHERE exam_id = ? AND score > ?`,
+      `SELECT COUNT(*) + 1 AS \`rank\` FROM results WHERE exam_id = ? AND score > ?`,
       [attempt.exam_id, score]
     );
     await db.query('UPDATE results SET `rank`=? WHERE id=?', [rankRow.rank, inserted.insertId]);
@@ -86,10 +86,14 @@ router.get('/my', protect, async (req, res) => {
    MUST be registered before /:id or Express will treat "leaderboard" as an id. */
 router.get('/leaderboard', protect, async (req, res) => {
   try {
-    const { examId } = req.query;
+    const rawExam = req.query.examId;
+    const examId =
+      rawExam != null && rawExam !== '' && !Number.isNaN(Number(rawExam))
+        ? Number(rawExam)
+        : null;
     const query = examId
       ? `SELECT u.id AS user_id, u.name, u.department,
-              MAX(r.score) AS score, MAX(r.percentage) AS accuracy, MIN(r.rank) AS rank
+              MAX(r.score) AS score, MAX(r.percentage) AS accuracy, MIN(r.\`rank\`) AS \`rank\`
          FROM results r JOIN users u ON u.id = r.user_id
          WHERE r.exam_id = ?
          GROUP BY u.id ORDER BY score DESC LIMIT 50`

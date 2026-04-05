@@ -84,6 +84,9 @@ const login = async (req, res) => {
     }
 
     // Generate JWT
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in environment variables.');
+    }
     const token = generateToken(user);
 
     res.json({
@@ -97,7 +100,11 @@ const login = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Login failed.', error: err.message });
+    console.error('Login Error:', err);
+    res.status(500).json({ 
+      message: `Login failed: ${err.message}`, 
+      error: err.stack 
+    });
   }
 };
 
@@ -157,16 +164,35 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-/* ── RESET PASSWORD ── */
+/* ── RESET PASSWORD ──
+   Token flow: { token, newPassword } (from forgot-password email link)
+   Mock flow (no SMTP): { email, newPassword } — direct update until email is wired */
 const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
-    
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: 'Token and new password are required' });
+    const { token, newPassword, email } = req.body;
+
+    if (!newPassword || String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'New password is required (min 6 characters).' });
     }
 
-    // Hash token to compare with DB
+    // Mock / direct reset by email (no token)
+    if (email && !token) {
+      const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email.trim()]);
+      if (users.length === 0) {
+        return res.status(404).json({ message: 'No account found with that email.' });
+      }
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await db.query(
+        'UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?',
+        [passwordHash, users[0].id]
+      );
+      return res.json({ message: 'Password has been reset successfully.' });
+    }
+
+    if (!token) {
+      return res.status(400).json({ message: 'Provide token (and newPassword) or email (and newPassword) for mock reset.' });
+    }
+
     const hash = crypto.createHash('sha256').update(token).digest('hex');
 
     const [users] = await db.query(
@@ -180,7 +206,6 @@ const resetPassword = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
-    // Update password and clear reset token
     await db.query(
       'UPDATE users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?',
       [passwordHash, users[0].id]
